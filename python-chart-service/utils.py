@@ -108,7 +108,7 @@ def split_into_cells(img, rows_num, columns_num):
         cells_in_row = np.hsplit(r, columns_num)
         for j, cell in enumerate(cells_in_row, start=0):
             cells.append(cell)
-            cv2.imwrite('result/{}_{}.png'.format(i, j), cell)
+            # cv2.imwrite('result/{}_{}.png'.format(i, j), cell)
     cells = np.array(cells)
     # cells = np.reshape(cells, (rows_num, columns_num, cells.shape[1], cells.shape[2], cells.shape[3]))
     return cells

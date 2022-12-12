@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 # from flasgger import Swagger, swag_from
-
-from flask import Flask, request, jsonify
 import json
 
+import cv2
+import numpy
+from flask import Flask, request, jsonify
+
+import engine
+import utils
 
 app = Flask(__name__)
 # swagger = Swagger(app)
@@ -17,38 +21,38 @@ def allowed_file(filename):
 @app.route('/image/upload', methods=['POST'])
 # @swag_from("swagger/image_controller_api_doc.yml")
 def upload_image():
-    # if 'image' not in request.files:
-    #     print(request.files)
-    #     resp = jsonify({'message': 'No image in request'})
-    #     resp.status_code = 400
-    #     return resp
-    # image = request.files['image']
-    #
-    # if image and allowed_file(image.filename):
-    #     success = True
-    # else:
-    #     resp = jsonify({'message': 'File type is not allowed'})
-    #     resp.status_code = 400
-    #     return resp
+    if 'image' not in request.files:
+        print(request.files)
+        resp = jsonify({'message': 'No image in request'})
+        resp.status_code = 400
+        return resp
+    image = request.files['image']
 
-    # if success:
-        # clusters_num = request.args.get('clusters')
-        # rows_num = int(request.args.get('rows'))
-        # columns_num = int(request.args.get('columns'))
-        #
-        # # read image file string data
-        # # convert string data to numpy array
-        # image = image.read()
-        # image_bytes = numpy.fromstring(image, numpy.uint8)
-        # # convert numpy array to image
-        # image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
-        # showImage(image)
-        # labels, label_image_map = engine.get_cells_from_image(image, clusters_num, rows_num, columns_num)
-        # response = {}
-        # labels = labels.reshape(rows_num, columns_num)
-        # labels_base64 = engine.encode_base64(labels)
-        # response['labels_matrix'] = labels_base64
-        # response['label_image_map'] = label_image_map
+    if image and allowed_file(image.filename):
+        success = True
+    else:
+        resp = jsonify({'message': 'File type is not allowed'})
+        resp.status_code = 400
+        return resp
+
+    if success:
+        clusters_num = request.args.get('clusters')
+        rows_num = int(request.args.get('rows'))
+        columns_num = int(request.args.get('columns'))
+
+        # read image file string data
+        # convert string data to numpy array
+        image = image.read()
+        image_bytes = numpy.fromstring(image, numpy.uint8)
+        # convert numpy array to image
+        image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
+        utils.showImage(image)
+        labels, label_image_map = engine.get_cells_from_image(image, clusters_num, rows_num, columns_num)
+        response = {}
+        labels = labels.reshape(rows_num, columns_num)
+        labels_base64 = engine.encode_base64(labels)
+        response['labels_matrix'] = labels_base64
+        response['label_image_map'] = label_image_map
 
        # пока хардкодим ответ. После появления этапа тех.поддержки будем получать ответ оттуда
         with open('./response/image_clusterize_api_response.json') as file:

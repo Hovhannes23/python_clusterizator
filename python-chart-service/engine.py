@@ -1,5 +1,6 @@
 import base64
 import io
+import os
 from base64 import encodebytes
 
 from clustimage import Clustimage
@@ -23,6 +24,7 @@ def get_cells_from_image(img, clusters_num, rows_num, columns_num):
         label_image_map[label] = (img_no_bckg, bckg_color)
     return labels, label_image_map
 
+
 def encode_base64(input):
     input_base64 = base64.b64encode(input)
     input_base64 = input_base64.decode('ascii')
@@ -32,8 +34,8 @@ def encode_base64(input):
     # encoded_img = encodebytes(byte_arr.getvalue()).decode('ascii')
     return input_base64
 
-def detect_split_into_cells(img, rows_num, columns_num):
 
+def detect_split_into_cells(img, rows_num, columns_num):
     global imgWarpColored
     w, h, d = img.shape
     showImage(img)
@@ -77,22 +79,49 @@ def detect_split_into_cells(img, rows_num, columns_num):
     return cells
 
 
-def cluster_cells(cells, cluster_num):
-    cluster_num = int(cluster_num)
-    sobel_images = []
+def cluster_cells(cells, cluster_count):
+    cluster_count = int(cluster_count)
+    label_to_symbol_map = {}
 
-    for img in cells:
-        img = preprocess.resize_and_RGB(img)
-        img = preprocess.blur_and_Sobel(img)
-        plt.show()
-        img = img.flatten()
-        sobel_images.append(img)
+    # временный код для добавления помеченных изображений
+    cells = upload_images_to_cells(cells, for_blank=True)
+    result = clusterize_images(cells, cluster_count)
+    labels_all = result["labels"]
+    # последним у нас был помеченный пустой символ, находим его label
+    label_of_blank = labels_all[cell.shape - 1]
 
-    sobel_images = np.array(sobel_images)
+    # удаляем последний label, так как он помеченный
+    del label_of_blank[-1]
+    label_to_symbol_map[label_of_blank] = blank_symbol_code
 
-    cl = Clustimage(method='pca', params_pca={'n_components': 70}, dim=(128, 128))
+    # отделяем изображения, на которых есть символы (которые не blank)
+    cells_without_blank = []
+    for idx, label in enumerate(labels):
+        if label != label_of_blank:
+            cells_without_blank.append(cells[idx])
 
-    result = cl.fit_transform(sobel_images, min_clust=cluster_num - 1, max_clust=cluster_num + 1)
+    # добавляем non blank помеченные изображения
+    cells_without_blank = upload_images_to_cells(cells_without_blank, for_blank=False)
+    result, cl = clusterize_images(cells_without_blank, cluster_count-1)
+    labels_without_blank = result["labels"]
+    label_elka = labels_without_blank[cells_without_blank.shape-5]
+    label_flower = labels_without_blank[cells_without_blank.shape-4]
+    label_kolos = labels_without_blank[cells_without_blank.shape-3]
+    label_square = labels_without_blank[cells_without_blank.shape-2]
+    label_sun = labels_without_blank[cells_without_blank.shape-1]
+
+    # удаляем последние 5 элементов, так как они помеченные
+    del labels_without_blank[-5:]
+    label_to_symbol_map[label_elka] = elkaSymbolCOde
+    label_to_symbol_map[label_flower] =
+    label_to_symbol_map[label_kolos]
+    label_to_symbol_map[label_square]
+    label_to_symbol_map[label_sun]
+
+    # TODO: из labels_all заменить все non-blank label-ы по очереди на label-ы из labels_without_blank
+
+    # конец временного кода
+
 
     labels = cl.results_unique['labels']
     idxs = cl.results_unique['idx']
@@ -102,18 +131,55 @@ def cluster_cells(cells, cluster_num):
         label = int(label)
         label_image_map[label] = cells[idxs[i]]
 
-    return result['labels'], label_image_map
-    # for idx, cluster in enumerate(result["labels"]):
-    #     dir_name = 'Clustered Images 60 epoch compose update/' + str(cluster)
-    #     if not os.path.exists(dir_name):
-    #         os.makedirs(dir_name)
-    #     cv2.imwrite(dir_name + '/' + str(idx) + '.png', cells[idx])
-    #
-    # cl.scatter(zoom=4)
-    # cl.dendogram()
-    # cl.pca.plot()
-    # cl.pca.scatter(legend=False, label=False)
-    # cl.clusteval.plot()
+    # return result['labels'], label_image_map
+    for idx, cluster in enumerate(result["labels"]):
+        dir_name = 'Clustered Images 60 epoch compose update/' + str(cluster)
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+        cv2.imwrite(dir_name + '/' + str(idx) + '.png', cells[idx])
+
+    cl.scatter(zoom=4)
+    cl.dendogram()
+    cl.pca.plot()
+    cl.pca.scatter(legend=False, label=False)
+    cl.clusteval.plot()
+
+
+# временный метод для добавления помеченных изображений к изображениям ячеек
+# for_blank = True, если добавляем к cells изображение пустой ячейки (blank.jpg)
+# for_blank = False, если добавляем изображения непустых ячеек
+def upload_images_to_cells(cells, for_blank):
+    folder = "chashka_symbols"
+    images = []
+    filenames = os.listdir(folder)
+
+    if for_blank:
+        filenames = ["blank.jpg"]
+    else:
+        filenames.remove("blank.jpg")
+
+    for filename in filenames:
+        img = cv2.imread(os.path.join(folder, filename))
+        if img is not None:
+            images.append(img)
+    cells = list(cells)
+    cells.extend(images)
+    return cells
+
+
+def clusterize_images(images, cluster_count):
+    sobel_images = []
+    for img in images:
+        img = preprocess.resize_and_RGB(img)
+        img = preprocess.blur_and_Sobel(img)
+        plt.show()
+        img = img.flatten()
+        sobel_images.append(img)
+
+    sobel_images = np.array(sobel_images)
+    cl = Clustimage(method='pca', params_pca={'n_components': cluster_count * 3}, dim=(128, 128))
+    result = cl.fit_transform(sobel_images, cluster_count, cluster_count + 1)
+    return result, cl
 
 
 def detach_background(image):
