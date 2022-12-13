@@ -2,6 +2,7 @@ import base64
 import io
 import os
 from base64 import encodebytes
+from collections import Counter
 
 from clustimage import Clustimage
 from sklearn.cluster import MiniBatchKMeans
@@ -15,13 +16,13 @@ def get_cells_from_image(img, clusters_num, rows_num, columns_num):
     columns_num = int(columns_num)
     cells = detect_split_into_cells(img, rows_num, columns_num)
     labels, label_image_map = cluster_cells(cells, clusters_num)
-
-    for label in label_image_map.keys():
-        img = label_image_map[label]
-        img_no_bckg, bckg_color = detach_background(img)
-        img_no_bckg = encode_base64(img_no_bckg)
-        bckg_color = encode_base64(bckg_color)
-        label_image_map[label] = (img_no_bckg, bckg_color)
+    labels = np.array(labels)
+    # for label in label_image_map.keys():
+    #     img = label_image_map[label]
+    #     img_no_bckg, bckg_color = detach_background(img)
+    #     img_no_bckg = encode_base64(img_no_bckg)
+    #     bckg_color = encode_base64(bckg_color)
+    #     label_image_map[label] = (img_no_bckg, bckg_color)
     return labels, label_image_map
 
 
@@ -81,68 +82,105 @@ def detect_split_into_cells(img, rows_num, columns_num):
 
 def cluster_cells(cells, cluster_count):
     cluster_count = int(cluster_count)
-    label_to_symbol_map = {}
 
     # временный код для добавления помеченных изображений
     cells = upload_images_to_cells(cells, for_blank=True)
-    result = clusterize_images(cells, cluster_count)
+    result, cl = clusterize_images(cells, 2)
     labels_all = result["labels"]
     # последним у нас был помеченный пустой символ, находим его label
-    label_of_blank = labels_all[cell.shape - 1]
+    label_of_blank = labels_all[-1]
 
     # удаляем последний label, так как он помеченный
-    del label_of_blank[-1]
-    label_to_symbol_map[label_of_blank] = blank_symbol_code
+    labels_all = labels_all[:-1]
 
     # отделяем изображения, на которых есть символы (которые не blank)
     cells_without_blank = []
-    for idx, label in enumerate(labels):
+    for idx, label in enumerate(labels_all):
         if label != label_of_blank:
             cells_without_blank.append(cells[idx])
 
     # добавляем non blank помеченные изображения
     cells_without_blank = upload_images_to_cells(cells_without_blank, for_blank=False)
-    result, cl = clusterize_images(cells_without_blank, cluster_count-1)
+    result, cl = clusterize_images(cells_without_blank, cluster_count - 1)
     labels_without_blank = result["labels"]
-    label_elka = labels_without_blank[cells_without_blank.shape-5]
-    label_flower = labels_without_blank[cells_without_blank.shape-4]
-    label_kolos = labels_without_blank[cells_without_blank.shape-3]
-    label_square = labels_without_blank[cells_without_blank.shape-2]
-    label_sun = labels_without_blank[cells_without_blank.shape-1]
+    label_elka = labels_without_blank[-5]
+    label_flower = labels_without_blank[-4]
+    label_kolos = labels_without_blank[-3]
+    label_square = labels_without_blank[-2]
+    label_sun = labels_without_blank[-1]
 
     # удаляем последние 5 элементов, так как они помеченные
-    del labels_without_blank[-5:]
-    label_to_symbol_map[label_elka] = elkaSymbolCOde
-    label_to_symbol_map[label_flower] =
-    label_to_symbol_map[label_kolos]
-    label_to_symbol_map[label_square]
-    label_to_symbol_map[label_sun]
+    labels_without_blank = labels_without_blank[:-5]
 
-    # TODO: из labels_all заменить все non-blank label-ы по очереди на label-ы из labels_without_blank
+    labels, new_label_blank = change_labels(labels_all, labels_without_blank, label_of_blank)
 
+    symbols_map = []
+    symbol_data0 = {}
+    label_count = Counter(labels)
+
+    symbol_data0["index"] = int(new_label_blank)
+    symbol_data0["symbolCode"] = "blank_symbol_code"
+    symbol_data0["backgroundColor"] = "#FFFFFF"
+    symbol_data0["count"] = label_count[new_label_blank]
+    symbols_map.append(symbol_data0)
+
+    symbol_data1 = {}
+    symbol_data1["index"] =  int(label_elka)
+    symbol_data1["symbolCode"] = "132"
+    symbol_data1["backgroundColor"] = detach_background(cells_without_blank[-5])[1]
+    symbol_data1["count"] = label_count[label_elka]
+    symbols_map.append(symbol_data1)
+
+    symbol_data2 = {}
+    symbol_data2["index"] =  int(label_flower)
+    symbol_data2["symbolCode"] = "205"
+    symbol_data2["backgroundColor"] = detach_background(cells_without_blank[-4])[1]
+    symbol_data2["count"] = label_count[label_flower]
+    symbols_map.append(symbol_data2)
+
+    symbol_data3 = {}
+    symbol_data3["index"] =  int(label_kolos)
+    symbol_data3["symbolCode"] = "65"
+    symbol_data3["backgroundColor"] = detach_background(cells_without_blank[-3])[1]
+    symbol_data3["count"] = label_count[label_kolos]
+    symbols_map.append(symbol_data3)
+
+    symbol_data4 = {}
+    symbol_data4["index"] =  int(label_square)
+    symbol_data4["symbolCode"] = "104"
+    symbol_data4["backgroundColor"] = detach_background(cells_without_blank[-2])[1]
+    symbol_data4["count"] = label_count[label_square]
+    symbols_map.append(symbol_data4)
+
+    symbol_data5 = {}
+    symbol_data5["index"] =  int(label_sun)
+    symbol_data5["symbolCode"] = "121"
+    symbol_data5["backgroundColor"] = detach_background(cells_without_blank[-1])[1]
+    symbol_data5["count"] = label_count[label_sun]
+    symbols_map.append(symbol_data5)
+    return labels, symbols_map
     # конец временного кода
 
-
-    labels = cl.results_unique['labels']
-    idxs = cl.results_unique['idx']
-    label_image_map = {}
-    for i, label in enumerate(labels):
-        print(cells[i])
-        label = int(label)
-        label_image_map[label] = cells[idxs[i]]
-
-    # return result['labels'], label_image_map
-    for idx, cluster in enumerate(result["labels"]):
-        dir_name = 'Clustered Images 60 epoch compose update/' + str(cluster)
-        if not os.path.exists(dir_name):
-            os.makedirs(dir_name)
-        cv2.imwrite(dir_name + '/' + str(idx) + '.png', cells[idx])
-
-    cl.scatter(zoom=4)
-    cl.dendogram()
-    cl.pca.plot()
-    cl.pca.scatter(legend=False, label=False)
-    cl.clusteval.plot()
+    # labels = cl.results_unique['labels']
+    # idxs = cl.results_unique['idx']
+    # label_image_map = {}
+    # for i, label in enumerate(labels):
+    #     print(cells[i])
+    #     label = int(label)
+    #     label_image_map[label] = cells[idxs[i]]
+    #
+    # # return result['labels'], label_image_map
+    # for idx, cluster in enumerate(result["labels"]):
+    #     dir_name = 'Clustered Images 60 epoch compose update/' + str(cluster)
+    #     if not os.path.exists(dir_name):
+    #         os.makedirs(dir_name)
+    #     cv2.imwrite(dir_name + '/' + str(idx) + '.png', cells[idx])
+    #
+    # cl.scatter(zoom=4)
+    # cl.dendogram()
+    # cl.pca.plot()
+    # cl.pca.scatter(legend=False, label=False)
+    # cl.clusteval.plot()
 
 
 # временный метод для добавления помеченных изображений к изображениям ячеек
@@ -167,6 +205,25 @@ def upload_images_to_cells(cells, for_blank):
     return cells
 
 
+# labels_all - матрица, в которой label-ы разделены на blank и non blank
+# labels_without_blank - матрица, в которой все non blank label-ы из labels_all кластеризированы
+# Метод заменяет non blank label-ы из labels_all на их кластеризированные значения (так как в labels_all они все лежат
+# под одним label-ом)
+def change_labels(labels_all, labels_without_blank, label_of_blank):
+    new_label_blank = np.max(labels_without_blank) + 1
+    new_labels_matrix = []
+    idx_without_blank = 0
+    for label in labels_all:
+        if label == label_of_blank:
+            label = new_label_blank
+        else:
+            label = labels_without_blank[idx_without_blank]
+            idx_without_blank += 1
+        new_labels_matrix.append(label)
+
+    return new_labels_matrix, new_label_blank
+
+
 def clusterize_images(images, cluster_count):
     sobel_images = []
     for img in images:
@@ -178,11 +235,12 @@ def clusterize_images(images, cluster_count):
 
     sobel_images = np.array(sobel_images)
     cl = Clustimage(method='pca', params_pca={'n_components': cluster_count * 3}, dim=(128, 128))
-    result = cl.fit_transform(sobel_images, cluster_count, cluster_count + 1)
+    result = cl.fit_transform(sobel_images, min_clust=cluster_count, max_clust=cluster_count + 1)
     return result, cl
 
 
 def detach_background(image):
+    showImage(image)
     (h, w) = image.shape[:2]
     # convert the image from the RGB color space to the L*a*b*
     # color space -- since we will be clustering using k-means
@@ -199,7 +257,15 @@ def detach_background(image):
     labels = clt.fit_predict(image)
     quant = clt.cluster_centers_.astype("uint8")[labels]
 
+    # to RGB
+    quant = quant.reshape((h, w, 3))
+    image = image.reshape((h, w, 3))
+    quant = cv2.cvtColor(quant, cv2.COLOR_LAB2RGB)
+    image = cv2.cvtColor(image, cv2.COLOR_LAB2RGB)
+
     # find most frequent color
+    image = image.reshape((image.shape[0] * image.shape[1], 3))
+    quant = quant.reshape((quant.shape[0] * quant.shape[1], 3))
     colors, counts = np.unique(quant, axis=0, return_counts=True)
     ind = np.argmax(counts)
     most_frequent_color = colors[ind]
@@ -207,15 +273,19 @@ def detach_background(image):
     quant = quant.reshape((h, w, 3))
     image = image.reshape((h, w, 3))
 
+
+
     # delete background color
     mask_without_bckgrd = cv2.inRange(quant, most_frequent_color, most_frequent_color)
     # mask_without_bckgrd = cv2.cvtColor(mask_without_bckgrd, cv2.COLOR_GRAY2RGB)
     mask_without_bckgrd = mask_without_bckgrd - 255
 
-    # convert from L*a*b* to RGB
-    quant = cv2.cvtColor(quant, cv2.COLOR_LAB2RGB)
-    image = cv2.cvtColor(image, cv2.COLOR_LAB2RGB)
-
     image_without_bckgrd = cv2.bitwise_and(image, image, mask=mask_without_bckgrd)
+    most_frequent_color = RGB_to_HEX(most_frequent_color)
 
     return image_without_bckgrd, most_frequent_color
+
+
+def RGB_to_HEX(rgb):
+    rgb = (rgb[0], rgb[1], rgb[2])
+    return '#' + '%02x%02x%02x' % rgb

@@ -50,13 +50,13 @@ def upload_image():
         labels, label_image_map = engine.get_cells_from_image(image, clusters_num, rows_num, columns_num)
         response = {}
         labels = labels.reshape(rows_num, columns_num)
-        labels_base64 = engine.encode_base64(labels)
-        response['labels_matrix'] = labels_base64
-        response['label_image_map'] = label_image_map
+        # labels_base64 = engine.encode_base64(labels)
+        response["matrix"] = labels.tolist()
+        response['symbolsMap'] = label_image_map
 
        # пока хардкодим ответ. После появления этапа тех.поддержки будем получать ответ оттуда
-        with open('./response/image_clusterize_api_response.json') as file:
-            response = json.load(file)
+       #  with open('./response/image_clusterize_api_response.json') as file:
+       #      response = json.load(file)
 
         resp = app.response_class(
            response=json.dumps(response),
