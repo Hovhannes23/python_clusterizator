@@ -126,35 +126,35 @@ def cluster_cells(cells, cluster_count):
 
     symbol_data1 = {}
     symbol_data1["index"] =  int(label_elka)
-    symbol_data1["symbolCode"] = "132"
+    symbol_data1["symbolCode"] = "aa"
     symbol_data1["backgroundColor"] = detach_background(cells_without_blank[-5])[1]
     symbol_data1["count"] = label_count[label_elka]
     symbols_map.append(symbol_data1)
 
     symbol_data2 = {}
     symbol_data2["index"] =  int(label_flower)
-    symbol_data2["symbolCode"] = "205"
+    symbol_data2["symbolCode"] = "cd"
     symbol_data2["backgroundColor"] = detach_background(cells_without_blank[-4])[1]
     symbol_data2["count"] = label_count[label_flower]
     symbols_map.append(symbol_data2)
 
     symbol_data3 = {}
     symbol_data3["index"] =  int(label_kolos)
-    symbol_data3["symbolCode"] = "65"
+    symbol_data3["symbolCode"] = "41"
     symbol_data3["backgroundColor"] = detach_background(cells_without_blank[-3])[1]
     symbol_data3["count"] = label_count[label_kolos]
     symbols_map.append(symbol_data3)
 
     symbol_data4 = {}
     symbol_data4["index"] =  int(label_square)
-    symbol_data4["symbolCode"] = "104"
+    symbol_data4["symbolCode"] = "44"
     symbol_data4["backgroundColor"] = detach_background(cells_without_blank[-2])[1]
     symbol_data4["count"] = label_count[label_square]
     symbols_map.append(symbol_data4)
 
     symbol_data5 = {}
     symbol_data5["index"] =  int(label_sun)
-    symbol_data5["symbolCode"] = "121"
+    symbol_data5["symbolCode"] = "51"
     symbol_data5["backgroundColor"] = detach_background(cells_without_blank[-1])[1]
     symbol_data5["count"] = label_count[label_sun]
     symbols_map.append(symbol_data5)
@@ -196,6 +196,7 @@ def upload_images_to_cells(cells, for_blank):
     else:
         filenames.remove("blank.jpg")
 
+    filenames = sorted(filenames)
     for filename in filenames:
         img = cv2.imread(os.path.join(folder, filename))
         if img is not None:
