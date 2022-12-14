@@ -1,8 +1,12 @@
-FROM ubuntu:18.04
-RUN apt-get update -y && apt-get install -y python-pip python-dev
+FROM python:3.8
+RUN apt-get update -y && apt-get install -y python3-pip python3 python-dev &&  python3 -m pip install --upgrade pip
 WORKDIR /app
 COPY . /app
-RUN pip install -r requirements.txt
+RUN #pip3 install torch torchvision
+RUN pip3 install -r requirements.txt
+RUN apt-get install ffmpeg libsm6 libxext6  -y
+#RUN conda update anaconda-navigator
+#RUN conda update navigator-updater
 COPY . /app
 EXPOSE 5000
 CMD ["python", "./image_controller.py"]

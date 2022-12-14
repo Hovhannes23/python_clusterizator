@@ -119,7 +119,7 @@ def cluster_cells(cells, cluster_count):
     label_count = Counter(labels)
 
     symbol_data0["index"] = int(new_label_blank)
-    symbol_data0["symbolCode"] = "blank_symbol_code"
+    symbol_data0["symbolCode"] = ""
     symbol_data0["backgroundColor"] = "#FFFFFF"
     symbol_data0["count"] = label_count[new_label_blank]
     symbols_map.append(symbol_data0)
