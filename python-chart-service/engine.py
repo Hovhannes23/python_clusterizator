@@ -16,6 +16,14 @@ def get_cells_from_image(img, clusters_num, rows_num, columns_num):
     columns_num = int(columns_num)
     cells = detect_split_into_cells(img, rows_num, columns_num)
     labels, label_image_map = cluster_cells(cells, clusters_num)
+
+    # раскидываем по папкам в зависимости от label, чтобы нагляднее было
+    for idx, cluster in enumerate(labels):
+        dir_name = 'Clustered Images 60 epoch compose update/' + str(cluster)
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+        cv2.imwrite(dir_name + '/' + str(idx) + '.png', cells[idx])
+
     labels = np.array(labels)
     # for label in label_image_map.keys():
     #     img = label_image_map[label]
@@ -125,35 +133,35 @@ def cluster_cells(cells, cluster_count):
     symbols_map.append(symbol_data0)
 
     symbol_data1 = {}
-    symbol_data1["index"] =  int(label_elka)
+    symbol_data1["index"] = int(label_elka)
     symbol_data1["symbolCode"] = "aa"
     symbol_data1["backgroundColor"] = detach_background(cells_without_blank[-5])[1]
     symbol_data1["count"] = label_count[label_elka]
     symbols_map.append(symbol_data1)
 
     symbol_data2 = {}
-    symbol_data2["index"] =  int(label_flower)
+    symbol_data2["index"] = int(label_flower)
     symbol_data2["symbolCode"] = "cd"
     symbol_data2["backgroundColor"] = detach_background(cells_without_blank[-4])[1]
     symbol_data2["count"] = label_count[label_flower]
     symbols_map.append(symbol_data2)
 
     symbol_data3 = {}
-    symbol_data3["index"] =  int(label_kolos)
+    symbol_data3["index"] = int(label_kolos)
     symbol_data3["symbolCode"] = "41"
     symbol_data3["backgroundColor"] = detach_background(cells_without_blank[-3])[1]
     symbol_data3["count"] = label_count[label_kolos]
     symbols_map.append(symbol_data3)
 
     symbol_data4 = {}
-    symbol_data4["index"] =  int(label_square)
+    symbol_data4["index"] = int(label_square)
     symbol_data4["symbolCode"] = "44"
     symbol_data4["backgroundColor"] = detach_background(cells_without_blank[-2])[1]
     symbol_data4["count"] = label_count[label_square]
     symbols_map.append(symbol_data4)
 
     symbol_data5 = {}
-    symbol_data5["index"] =  int(label_sun)
+    symbol_data5["index"] = int(label_sun)
     symbol_data5["symbolCode"] = "51"
     symbol_data5["backgroundColor"] = detach_background(cells_without_blank[-1])[1]
     symbol_data5["count"] = label_count[label_sun]
@@ -161,26 +169,26 @@ def cluster_cells(cells, cluster_count):
     return labels, symbols_map
     # конец временного кода
 
-    # labels = cl.results_unique['labels']
-    # idxs = cl.results_unique['idx']
-    # label_image_map = {}
-    # for i, label in enumerate(labels):
-    #     print(cells[i])
-    #     label = int(label)
-    #     label_image_map[label] = cells[idxs[i]]
-    #
-    # # return result['labels'], label_image_map
-    # for idx, cluster in enumerate(result["labels"]):
-    #     dir_name = 'Clustered Images 60 epoch compose update/' + str(cluster)
-    #     if not os.path.exists(dir_name):
-    #         os.makedirs(dir_name)
-    #     cv2.imwrite(dir_name + '/' + str(idx) + '.png', cells[idx])
-    #
-    # cl.scatter(zoom=4)
-    # cl.dendogram()
-    # cl.pca.plot()
-    # cl.pca.scatter(legend=False, label=False)
-    # cl.clusteval.plot()
+    labels = cl.results_unique['labels']
+    idxs = cl.results_unique['idx']
+    label_image_map = {}
+    for i, label in enumerate(labels):
+        print(cells[i])
+        label = int(label)
+        label_image_map[label] = cells[idxs[i]]
+
+    # return result['labels'], label_image_map
+    for idx, cluster in enumerate(result["labels"]):
+        dir_name = 'Clustered Images 60 epoch compose update/' + str(cluster)
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+        cv2.imwrite(dir_name + '/' + str(idx) + '.png', cells[idx])
+
+    cl.scatter(zoom=4)
+    cl.dendogram()
+    cl.pca.plot()
+    cl.pca.scatter(legend=False, label=False)
+    cl.clusteval.plot()
 
 
 # временный метод для добавления помеченных изображений к изображениям ячеек
@@ -235,7 +243,8 @@ def clusterize_images(images, cluster_count):
         sobel_images.append(img)
 
     sobel_images = np.array(sobel_images)
-    cl = Clustimage(method='pca', params_pca={'n_components': cluster_count * 3}, dim=(128, 128))
+    cl = Clustimage(method='pca', params_pca={'n_components': cluster_count*4}, dim=(128, 128))
+    # cl = Clustimage(method='hog', params_hog={'orientations': 8, 'pixels_per_cell': (8, 8), 'cells_per_block': (1, 1)}, dim=(128, 128))
     result = cl.fit_transform(sobel_images, min_clust=cluster_count, max_clust=cluster_count + 1)
     return result, cl
 

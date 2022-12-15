@@ -2,10 +2,12 @@
 # from flasgger import Swagger, swag_from
 import json
 
+import PIL
 import cv2
 import numpy
 from flask import Flask, request, jsonify
-
+from PIL import Image
+import io
 import engine
 import utils
 
@@ -21,14 +23,21 @@ def allowed_file(filename):
 @app.route('/image/upload', methods=['POST'])
 # @swag_from("swagger/image_controller_api_doc.yml")
 def upload_image():
-    if 'image' not in request.files:
-        print(request.files)
+    image_bytes = request.get_data()
+    try:
+        image = Image.open(io.BytesIO(image_bytes))
+    except PIL.UnidentifiedImageError as e:
         resp = jsonify({'message': 'No image in request'})
         resp.status_code = 400
         return resp
-    image = request.files['image']
 
-    if image and allowed_file(image.filename):
+    # if 'image' not in request.files:
+    #     resp = jsonify({'message': 'No image in request'})
+    #     resp.status_code = 400
+    #     return resp
+    # image = request.files['image']
+
+    if image.format.lower() in ALLOWED_EXTENSIONS:
         success = True
     else:
         resp = jsonify({'message': 'File type is not allowed'})
@@ -40,12 +49,13 @@ def upload_image():
         rows_num = int(request.args.get('rows'))
         columns_num = int(request.args.get('columns'))
 
-        # read image file string data
-        # convert string data to numpy array
-        image = image.read()
-        image_bytes = numpy.fromstring(image, numpy.uint8)
+        # # read image file string data
+        # # convert string data to numpy array
+        # image = image.read()
+        # image_bytes = numpy.fromstring(image, numpy.uint8)
         # convert numpy array to image
-        image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
+        # image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
+        image = numpy.array(image)
         utils.showImage(image)
         labels, label_image_map = engine.get_cells_from_image(image, clusters_num, rows_num, columns_num)
         response = {}
