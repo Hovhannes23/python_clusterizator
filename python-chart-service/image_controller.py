@@ -10,10 +10,12 @@ from PIL import Image
 import io
 import engine
 import utils
+from pillow_heif import register_heif_opener
 
 app = Flask(__name__)
 # swagger = Swagger(app)
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg'])
+ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'heif'])
+register_heif_opener()
 
 
 def allowed_file(filename):
