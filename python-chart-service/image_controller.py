@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # from flasgger import Swagger, swag_from
 import json
-
 import PIL
-import cv2
 import numpy
 from flask import Flask, request, jsonify
 from PIL import Image
@@ -14,7 +12,8 @@ from pillow_heif import register_heif_opener
 
 app = Flask(__name__)
 # swagger = Swagger(app)
-ALLOWED_EXTENSIONS = set(['png', 'jpg', 'jpeg', 'heif'])
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'heif'}
+# для работы с heif форматом
 register_heif_opener()
 
 
@@ -33,12 +32,6 @@ def upload_image():
         resp.status_code = 400
         return resp
 
-    # if 'image' not in request.files:
-    #     resp = jsonify({'message': 'No image in request'})
-    #     resp.status_code = 400
-    #     return resp
-    # image = request.files['image']
-
     if image.format.lower() in ALLOWED_EXTENSIONS:
         success = True
     else:
@@ -51,12 +44,6 @@ def upload_image():
         rows_num = int(request.args.get('rows'))
         columns_num = int(request.args.get('columns'))
 
-        # # read image file string data
-        # # convert string data to numpy array
-        # image = image.read()
-        # image_bytes = numpy.fromstring(image, numpy.uint8)
-        # convert numpy array to image
-        # image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
         image = numpy.array(image)
         utils.showImage(image)
         labels, label_image_map = engine.get_cells_from_image(image, clusters_num, rows_num, columns_num)
@@ -65,10 +52,6 @@ def upload_image():
         # labels_base64 = engine.encode_base64(labels)
         response["matrix"] = labels.tolist()
         response['symbolsMap'] = label_image_map
-
-       # пока хардкодим ответ. После появления этапа тех.поддержки будем получать ответ оттуда
-       #  with open('./response/image_clusterize_api_response.json') as file:
-       #      response = json.load(file)
 
         resp = app.response_class(
            response=json.dumps(response),
