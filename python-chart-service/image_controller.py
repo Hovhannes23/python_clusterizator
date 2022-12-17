@@ -53,6 +53,7 @@ def upload_image():
         response["matrix"] = labels.tolist()
         response['symbolsMap'] = label_image_map
 
+        response = engine.response_adapter(response, rows_num, columns_num)
         resp = app.response_class(
            response=json.dumps(response),
            status=202,
