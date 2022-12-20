@@ -146,10 +146,10 @@ def cluster_cells(cells, cluster_count):
     symbol_data0 = {}
     label_count = Counter(labels)
 
-    symbol_data0["index"] = int(new_label_blank)
+    symbol_data0["index"] = int(-1)
     symbol_data0["symbolCode"] = ""
     symbol_data0["backgroundColor"] = "#FFFFFF"
-    symbol_data0["count"] = label_count[new_label_blank]
+    symbol_data0["count"] = label_count[-1]
     symbols_map.append(symbol_data0)
 
     symbol_data1 = {}
@@ -239,7 +239,8 @@ def upload_images_to_cells(cells, for_blank):
 # Метод заменяет non blank label-ы из labels_all на их кластеризированные значения (так как в labels_all они все лежат
 # под одним label-ом)
 def change_labels(labels_all, labels_without_blank, label_of_blank):
-    new_label_blank = np.max(labels_without_blank) + 1
+    # new_label_blank = np.max(labels_without_blank) + 1
+    new_label_blank = -1
     new_labels_matrix = []
     idx_without_blank = 0
     for label in labels_all:

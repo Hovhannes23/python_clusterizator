@@ -27,6 +27,11 @@ def upload_image():
     image_bytes = request.get_data()
     try:
         image = Image.open(io.BytesIO(image_bytes))
+        # удалить print после тестирования
+        print("_________________________________")
+        print("height:" + str(image.height))
+        print("width:" + str(image.width))
+        print("_________________________________")
     except PIL.UnidentifiedImageError as e:
         resp = jsonify({'message': 'No image in request'})
         resp.status_code = 400
